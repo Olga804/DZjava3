@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -18,7 +19,7 @@ public class Main {
     Gson gson = new Gson();
     LocalDate today = LocalDate.now();
     Scanner scanner = new Scanner(System.in);
-    String path = "";
+    String path = "C:\\example.json";
     if (path==""){
         System.out.print("Введите имя файла:  ");
         path = scanner.nextLine();
@@ -42,16 +43,6 @@ public class Main {
                         Stream.of(String.format("%s - %s/%s/%s", x.getName_short(), help[2],help[1],help[0]))
                                 .forEach(System.out::println);
                     });
-                    //.flatMap(x->xformat1.parse(x.getEgrul_date() ))
-                    /*.flatMap(x-> {
-                        String[] help = x.getEgrul_date().split("\\.|,|/|-");
-                        Stream.of(String.format("%s - %s/%s/%s", x.getName_short(), help[2],help[1],help[0]))
-                                .forEach(System.out::println);
-                        return
-                    })
-                    .forEach(System.out::println);
-
-                     */
         } else{
             System.out.println("В таблице нет элементов!");
         }
@@ -59,7 +50,7 @@ public class Main {
         System.out.println();
 
         //2 просроченые ценные бумаги, и сумма таких(код, дата истечения, полное название компании)
-        count =
+       count =
         list.stream()
                 .flatMap(x->Arrays.stream(x.getSecurities()))
                 .filter(x-> {
@@ -69,7 +60,7 @@ public class Main {
                         })
                 .count();
 
-        if(count>0){
+           if(count>0){
             System.out.println("Просроченные ценные бумаги:");
             System.out.print("   Код      /");
             System.out.print("    Дата   /");
@@ -98,64 +89,50 @@ public class Main {
         string = scanner.nextLine();
 
         String[] help = string.split("\\.|,|/");
-        final LocalDate dayX = LocalDate.of(Integer.parseInt(help[2]),Integer.parseInt(help[1]),Integer.parseInt(help[0]));
+        int year = Integer.parseInt(help[2]);
 
-       count =
-        list.stream()
+        if(year<100){
+        if(year<today.getYear()%100){
+            year+=2000;
+        } else {
+            year+=1900;
+        }}
+
+        final LocalDate dayX = LocalDate.of(year,Integer.parseInt(help[1]),Integer.parseInt(help[0]));
+        List<String>raft = list.stream()
                 .filter(z-> {
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                             LocalDate date = LocalDate.parse(z.getEgrul_date(), formatter);
                             return dayX.isBefore(date);
                         })
-               .count();
-       if(count>0) {
-           list.stream()
-                   .filter(z-> {
-                       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                       LocalDate date = LocalDate.parse(z.getEgrul_date(), formatter);
-                       return dayX.isBefore(date);
-                   })
-                   .flatMap(x -> Stream.of(String.format("%s %s", x.getName_full(),x.getEgrul_date())))
-                   .forEach(System.out::println);
+                .flatMap(x -> Stream.of(String.format("%s %s", x.getName_full(),x.getEgrul_date())))
+               .collect(Collectors.toList());
 
-
-
+       if(raft.stream().count()>0) {
+           raft.stream().forEach(System.out::println);
        } else {
            System.out.println("Компаний основанных после введенной даты не найдено!");
        }}catch(Exception e){
-            System.out.println("ОШИБКА! Не коректная дата!");
+            System.out.println("ОШИБКА! Не корpектная дата!");
         }
-
-
-
-
-
 
 
         //4 Запрос по валюте( id, code бумаги)
         System.out.print("Поиск по валюте.");
         System.out.print("Введите код валюты: ");
-        string = scanner.nextLine();
 
+        string = scanner.nextLine();
         final String stringMoney = string;
 
-
-        count =
-        list.stream()
+        List<String>raft = list.stream()
                 .flatMap(x->Arrays.stream(x.getSecurities()))
                         .filter(y->y.getCurrency().getCode().equals(stringMoney))
-                        //.collect(Collectors.toMap(Securities::getId,Securities::getCode));
                         .flatMap(z->Stream.of(String.format("%s %s", z.getId(),z.getCode())))
-                        .count();
-        if (count>0){
+                        .collect(Collectors.toList());
+        if (raft.stream().count()>0){
             System.out.print("    id    /");
             System.out.println("   code   ");
-            list.stream()
-                    .flatMap(x->Arrays.stream(x.getSecurities()))
-                    .filter(y->y.getCurrency().getCode().equals(stringMoney))
-                    .flatMap(z->Stream.of(String.format("%s %s", z.getId(),z.getCode())))
-                    .forEach(System.out::println);
-
+            raft.stream().forEach(System.out::println);
         }else {
 
             System.out.println("Такой валюты не найдено!");
@@ -168,10 +145,6 @@ public class Main {
         System.out.println("ОШИБКА! Файл *.json не найден!");
 
     }
-
-
-
-
 
     }
 }
